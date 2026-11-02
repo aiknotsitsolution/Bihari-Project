@@ -71,7 +71,7 @@ function Tabs() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.faint,
         tabBarLabelStyle: { fontSize: 11, fontWeight: "700" },
-        tabBarStyle: { borderTopColor: colors.border, height: 62, paddingTop: 6, paddingBottom: 8 },
+        tabBarStyle: { borderTopColor: colors.border },
         tabBarIcon: ({ color, size, focused }) => (
           <TabIcon
             name={TAB_ICONS[route.name][0]}
