@@ -12,6 +12,8 @@ import ProductCard from "../components/ProductCard";
 import { ProductGridSkeleton, Skeleton } from "../components/Skeleton";
 import { ErrorState, SectionHeader } from "../components/UI";
 import { useAuth } from "../context/AuthContext";
+import { useCart } from "../context/CartContext";
+import { useWishlist } from "../context/WishlistContext";
 import { api } from "../lib/api";
 import { BANNERS } from "../lib/data";
 import { GRID_GAP, SCREEN_PAD, useCardWidth } from "../lib/layout";
@@ -23,6 +25,8 @@ export default function HomeScreen() {
   const nav = useNavigation<NativeStackNavigationProp<RootStackParams>>();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const { count: cartCount } = useCart();
+  const { items: wishlist } = useWishlist();
   const cardW = useCardWidth();
   const home = useAsync(() => api.catalog.home(), []);
 
@@ -44,6 +48,32 @@ export default function HomeScreen() {
           </View>
           <AnimatedPressable onPress={() => nav.navigate("Notifications")} style={s.iconBtn} accessibilityLabel="Notifications" haptic>
             <Ionicons name="notifications-outline" size={21} color="#fff" />
+          </AnimatedPressable>
+          <AnimatedPressable
+            onPress={() => nav.navigate("Cart")}
+            style={s.iconBtn}
+            accessibilityLabel={`My Cart${cartCount > 0 ? `, ${cartCount} items` : ""}`}
+            haptic
+          >
+            <Ionicons name="bag-handle-outline" size={21} color="#fff" />
+            {cartCount > 0 && (
+              <View style={s.cartBadge}>
+                <Text style={s.cartBadgeText}>{cartCount > 99 ? "99+" : cartCount}</Text>
+              </View>
+            )}
+          </AnimatedPressable>
+          <AnimatedPressable
+            onPress={() => nav.navigate("Wishlist")}
+            style={s.iconBtn}
+            accessibilityLabel={`Wishlist${wishlist.length > 0 ? `, ${wishlist.length} items` : ""}`}
+            haptic
+          >
+            <Ionicons name="heart-outline" size={21} color="#fff" />
+            {wishlist.length > 0 && (
+              <View style={s.cartBadge}>
+                <Text style={s.cartBadgeText}>{wishlist.length > 99 ? "99+" : wishlist.length}</Text>
+              </View>
+            )}
           </AnimatedPressable>
           <AnimatedPressable onPress={() => nav.navigate("AIChat")} style={s.iconBtn} accessibilityLabel="AI assistant" haptic>
             <Ionicons name="sparkles" size={20} color={colors.saffron} />
@@ -142,6 +172,8 @@ const s = StyleSheet.create({
   hello: { color: "#fff", fontSize: 20, fontWeight: "800", letterSpacing: -0.3 },
   helloSub: { color: "rgba(255,255,255,0.82)", fontSize: 13, marginTop: 2 },
   iconBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.16)", alignItems: "center", justifyContent: "center" },
+  cartBadge: { position: "absolute", top: -2, right: -2, minWidth: 17, height: 17, borderRadius: 9, paddingHorizontal: 3, backgroundColor: colors.saffron, alignItems: "center", justifyContent: "center" },
+  cartBadgeText: { color: colors.pine, fontSize: 9, fontWeight: "800" },
   search: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#fff", borderRadius: radius.md, paddingHorizontal: 14, paddingVertical: 13 },
   searchText: { color: colors.faint, fontSize: 14 },
   cat: { alignItems: "center", width: 74, gap: 7 },

@@ -240,7 +240,7 @@ export default function ProductDetailScreen() {
               <HeartButton active={has(p.id)} onPress={() => toggle(p)} floating={false} />
             </View>
           )}
-          <AnimatedPressable onPress={() => nav.navigate("Tabs", { screen: "Cart" } as never)} style={s.roundBtn} accessibilityLabel="Open cart">
+          <AnimatedPressable onPress={() => nav.navigate("Cart")} style={s.roundBtn} accessibilityLabel="Open cart">
             <Ionicons name="bag-outline" size={20} color={colors.text} />
             {count > 0 && (
               <View style={s.cartBadge}>

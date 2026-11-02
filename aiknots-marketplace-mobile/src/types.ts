@@ -163,6 +163,8 @@ export interface CouponResult {
 export type RootStackParams = {
   Tabs: undefined;
   Products: { q?: string; categoryId?: string; title?: string; focus?: boolean } | undefined;
+  Cart: undefined;
+  Wishlist: undefined;
   ProductDetail: { id: string };
   Checkout: undefined;
   Addresses: undefined;
@@ -180,7 +182,5 @@ export type TabParams = {
   Home: undefined;
   Products: undefined;
   Categories: undefined;
-  Cart: undefined;
-  Wishlist: undefined;
   Profile: undefined;
 };

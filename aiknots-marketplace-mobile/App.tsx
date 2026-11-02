@@ -11,9 +11,9 @@ import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn, ZoomIn } from "react-native-reanimated";
 
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
-import { CartProvider, useCart } from "./src/context/CartContext";
+import { CartProvider } from "./src/context/CartContext";
 import { ToastProvider } from "./src/context/ToastContext";
-import { WishlistProvider, useWishlist } from "./src/context/WishlistContext";
+import { WishlistProvider } from "./src/context/WishlistContext";
 import TabIcon from "./src/components/TabIcon";
 
 import AIChatScreen from "./src/screens/AIChatScreen";
@@ -44,8 +44,6 @@ const TAB_ICONS: Record<keyof TabParams, [IconName, IconName]> = {
   Home: ["home-outline", "home"],
   Products: ["pricetags-outline", "pricetags"],
   Categories: ["grid-outline", "grid"],
-  Cart: ["bag-outline", "bag"],
-  Wishlist: ["heart-outline", "heart"],
   Profile: ["person-outline", "person"],
 };
 
@@ -63,8 +61,6 @@ const stackHeader = {
 };
 
 function Tabs() {
-  const { count } = useCart();
-  const { items: wish } = useWishlist();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -80,7 +76,6 @@ function Tabs() {
             focused={focused}
             color={color}
             size={size}
-            badge={route.name === "Cart" ? count : route.name === "Wishlist" ? wish.length : 0}
           />
         ),
       })}
@@ -88,8 +83,6 @@ function Tabs() {
       <Tab.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
       <Tab.Screen name="Products" component={ProductsScreen} options={{ title: "Products" }} />
       <Tab.Screen name="Categories" component={CategoriesScreen} />
-      <Tab.Screen name="Cart" component={CartScreen} options={{ title: "My cart" }} />
-      <Tab.Screen name="Wishlist" component={WishlistScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
     </Tab.Navigator>
   );
@@ -116,6 +109,8 @@ function Root() {
       <Stack.Navigator screenOptions={{ ...stackHeader, animation: "slide_from_right" }}>
         <Stack.Screen name="Tabs" component={Tabs} options={{ headerShown: false }} />
         <Stack.Screen name="Products" component={ProductsScreen} />
+        <Stack.Screen name="Cart" component={CartScreen} options={{ title: "My cart" }} />
+        <Stack.Screen name="Wishlist" component={WishlistScreen} options={{ title: "Wishlist" }} />
         <Stack.Screen name="ProductDetail" component={ProductDetailScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Checkout" component={CheckoutScreen} options={{ title: "Checkout" }} />
         <Stack.Screen name="Addresses" component={AddressesScreen} options={{ title: "My addresses" }} />

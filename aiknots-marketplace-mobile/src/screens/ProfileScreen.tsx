@@ -26,7 +26,7 @@ export default function ProfileScreen() {
 
   const menu: { icon: IconName; label: string; sub?: string; onPress: () => void; auth?: boolean }[] = [
     { icon: "receipt-outline", label: "My orders", sub: "Track, return or cancel", onPress: () => nav.navigate("Orders"), auth: true },
-    { icon: "heart-outline", label: "Wishlist", sub: `${wishlist.length} saved`, onPress: () => nav.navigate("Tabs", { screen: "Wishlist" } as never) },
+    { icon: "heart-outline", label: "Wishlist", sub: `${wishlist.length} saved`, onPress: () => nav.navigate("Wishlist") },
     { icon: "location-outline", label: "Addresses", sub: "Manage delivery addresses", onPress: () => nav.navigate("Addresses"), auth: true },
     { icon: "notifications-outline", label: "Notifications", onPress: () => nav.navigate("Notifications"), auth: true },
     { icon: "sparkles-outline", label: "AI shopping assistant", sub: "Ask about products, orders, offers", onPress: () => nav.navigate("AIChat") },
