@@ -1,0 +1,71 @@
+x-service-env: &service-env
+  # Avoid Node's dual-stack connector stalling when containers lack IPv6 egress.
+  NODE_OPTIONS: --no-network-family-autoselection
+  DB_HOST: postgres
+  DB_PORT: 5432
+  DB_USER: postgres
+  DB_PASSWORD: postgres
+  DATABASE_URL: ${DATABASE_URL:-}
+  DB_SYNC: "true"
+  JWT_SECRET: ${JWT_SECRET:-change-me-to-a-long-random-string}
+  PAYMENT_WEBHOOK_SECRET: ${PAYMENT_WEBHOOK_SECRET:-change-me-too}
+  AUTH_HOST: auth-service
+  AUTH_PORT: ${AUTH_PORT:-8001}
+  CATALOG_HOST: catalog-service
+  CATALOG_PORT: ${CATALOG_PORT:-8002}
+  ORDER_HOST: order-service
+  ORDER_PORT: ${ORDER_PORT:-8003}
+  PAYMENT_HOST: payment-service
+  PAYMENT_PORT: ${PAYMENT_PORT:-8004}
+  GATEWAY_PUBLIC_URL: http://localhost:${GATEWAY_HOST_PORT:-8080}
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  auth-service:
+    build: { context: ., args: { SERVICE: auth-service } }
+    environment:
+      <<: *service-env
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@12345}
+    depends_on: { postgres: { condition: service_healthy } }
+
+  catalog-service:
+    build: { context: ., args: { SERVICE: catalog-service } }
+    environment: *service-env
+    depends_on: { postgres: { condition: service_healthy } }
+
+  order-service:
+    build: { context: ., args: { SERVICE: order-service } }
+    environment: *service-env
+    depends_on: { postgres: { condition: service_healthy } }
+
+  payment-service:
+    build: { context: ., args: { SERVICE: payment-service } }
+    environment: *service-env
+    depends_on: { postgres: { condition: service_healthy } }
+
+  gateway:
+    build: { context: ., args: { SERVICE: gateway } }
+    environment:
+      <<: *service-env
+      CORS_ORIGINS: http://localhost:3000
+      GATEWAY_PORT: ${GATEWAY_PORT:-8000}
+    ports: ["${GATEWAY_HOST_PORT:-8080}:8000"]
+    depends_on: [auth-service, catalog-service, order-service, payment-service]
+
+volumes:
+  pgdata:
