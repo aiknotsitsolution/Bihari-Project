@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "AI Knots Marketplace",
+    "slug": "aiknots-marketplace-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.aiknots.marketplace"
+    },
+    "android": {
+      "package": "com.aiknots.marketplace"
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-web-browser",
+      "expo-font",
+      "expo-image",
+      "expo-status-bar"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "REPLACE_WITH_YOUR_EAS_PROJECT_ID"
+      }
+    },
+    "owner": "ai-knots-it-solution"
+  }
+}
