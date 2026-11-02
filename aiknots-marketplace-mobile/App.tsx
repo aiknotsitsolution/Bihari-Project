@@ -1,11 +1,11 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
+import { NavigationContainer, DefaultTheme, useNavigation } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { createNativeStackNavigator, type NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn, ZoomIn } from "react-native-reanimated";
@@ -14,6 +14,7 @@ import { AuthProvider, useAuth } from "./src/context/AuthContext";
 import { CartProvider } from "./src/context/CartContext";
 import { ToastProvider } from "./src/context/ToastContext";
 import { WishlistProvider } from "./src/context/WishlistContext";
+import AnimatedPressable from "./src/components/AnimatedPressable";
 import TabIcon from "./src/components/TabIcon";
 
 import AIChatScreen from "./src/screens/AIChatScreen";
@@ -61,30 +62,46 @@ const stackHeader = {
 };
 
 function Tabs() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParams>>();
+  const insets = useSafeAreaInsets();
+
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        ...stackHeader,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.faint,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: "700" },
-        tabBarStyle: { borderTopColor: colors.border },
-        tabBarIcon: ({ color, size, focused }) => (
-          <TabIcon
-            name={TAB_ICONS[route.name][0]}
-            activeName={TAB_ICONS[route.name][1]}
-            focused={focused}
-            color={color}
-            size={size}
-          />
-        ),
-      })}
-    >
-      <Tab.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
-      <Tab.Screen name="Products" component={ProductsScreen} options={{ title: "Products" }} />
-      <Tab.Screen name="Categories" component={CategoriesScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
-    </Tab.Navigator>
+    <View style={{ flex: 1 }}>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          ...stackHeader,
+          tabBarActiveTintColor: colors.primary,
+          tabBarInactiveTintColor: colors.faint,
+          tabBarLabelStyle: { fontSize: 11, fontWeight: "700" },
+          tabBarStyle: { borderTopColor: colors.border },
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon
+              name={TAB_ICONS[route.name][0]}
+              activeName={TAB_ICONS[route.name][1]}
+              focused={focused}
+              color={color}
+              size={size}
+            />
+          ),
+        })}
+      >
+        <Tab.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
+        <Tab.Screen name="Products" component={ProductsScreen} options={{ title: "Products" }} />
+        <Tab.Screen name="Categories" component={CategoriesScreen} />
+        <Tab.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
+      </Tab.Navigator>
+      <AnimatedPressable
+        onPress={() => navigation.navigate("AIChat")}
+        style={[s.aiButton, { bottom: insets.bottom + 72 }]}
+        accessibilityRole="button"
+        accessibilityLabel="Open AI shopping assistant"
+        haptic
+      >
+        <LinearGradient colors={[colors.primary, colors.primaryDark]} style={s.aiButtonGradient}>
+          <Ionicons name="sparkles" size={23} color={colors.saffron} />
+        </LinearGradient>
+      </AnimatedPressable>
+    </View>
   );
 }
 
@@ -150,6 +167,19 @@ export default function App() {
 
 const s = StyleSheet.create({
   splash: { alignItems: "center", justifyContent: "center", gap: 18 },
+  aiButton: {
+    position: "absolute",
+    right: 18,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    elevation: 8,
+    shadowColor: colors.pine,
+    shadowOpacity: 0.24,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 5 },
+  },
+  aiButtonGradient: { flex: 1, borderRadius: 29, alignItems: "center", justifyContent: "center" },
   logo: { width: 96, height: 96, borderRadius: 28, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
   splashText: { color: "#fff", fontSize: 22, fontWeight: "800", letterSpacing: -0.3 },
 });

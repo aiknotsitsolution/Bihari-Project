@@ -75,9 +75,6 @@ export default function HomeScreen() {
               </View>
             )}
           </AnimatedPressable>
-          <AnimatedPressable onPress={() => nav.navigate("AIChat")} style={s.iconBtn} accessibilityLabel="AI assistant" haptic>
-            <Ionicons name="sparkles" size={20} color={colors.saffron} />
-          </AnimatedPressable>
         </Animated.View>
         <Animated.View entering={FadeInDown.delay(90).duration(450)}>
           <AnimatedPressable onPress={() => nav.navigate("Products", { focus: true })} scaleTo={0.985} style={s.search} accessibilityLabel="Search products">
