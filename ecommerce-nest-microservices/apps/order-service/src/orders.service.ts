@@ -46,12 +46,61 @@ const TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
 const RESERVATION_MINUTES = 15;
 const DELIVERY_DAYS = 7;
 const MAX_DNS_RETRIES = 3;
+const TRANSIENT_DATABASE_CODES = new Set([
+  '08000',
+  '08001',
+  '08003',
+  '08004',
+  '08006',
+  '08007',
+  '08P01',
+  '57P01',
+  '57P02',
+  '57P03',
+  'EAI_AGAIN',
+  'ECONNREFUSED',
+  'ECONNRESET',
+  'EHOSTUNREACH',
+  'ENETUNREACH',
+  'ENOTFOUND',
+  'ETIMEDOUT',
+  'EPIPE',
+]);
 
-function getErrorCode(error: unknown): string | undefined {
+function getErrorCode(error: unknown, seen = new Set<object>()): string | undefined {
   if (typeof error !== 'object' || error === null) return undefined;
+  if (seen.has(error)) return undefined;
+  seen.add(error);
+
   const details = error as { code?: unknown; cause?: unknown; driverError?: unknown };
   if (typeof details.code === 'string') return details.code;
-  return getErrorCode(details.driverError) ?? getErrorCode(details.cause);
+  return getErrorCode(details.driverError, seen) ?? getErrorCode(details.cause, seen);
+}
+
+function isTransientDatabaseError(error: unknown, seen = new Set<object>()): boolean {
+  if (typeof error !== 'object' || error === null || seen.has(error)) return false;
+  seen.add(error);
+
+  const details = error as {
+    code?: unknown;
+    message?: unknown;
+    cause?: unknown;
+    driverError?: unknown;
+    errors?: unknown;
+  };
+  if (
+    (typeof details.code === 'string' && TRANSIENT_DATABASE_CODES.has(details.code)) ||
+    (typeof details.message === 'string' &&
+      /connection terminated unexpectedly|connection terminated|socket hang up/i.test(details.message))
+  ) {
+    return true;
+  }
+
+  return (
+    isTransientDatabaseError(details.driverError, seen) ||
+    isTransientDatabaseError(details.cause, seen) ||
+    (Array.isArray(details.errors) && details.errors.some((cause) => isTransientDatabaseError(cause, seen)))
+  );
 }
 
 function formatError(error: unknown, seen = new Set<object>()): string {
@@ -129,13 +178,13 @@ export class OrdersService implements OnApplicationBootstrap, OnModuleDestroy {
         });
       } catch (error) {
         const code = getErrorCode(error);
-        if (!['ENOTFOUND', 'EAI_AGAIN'].includes(code ?? '') || attempt >= MAX_DNS_RETRIES) {
+        if (!isTransientDatabaseError(error) || attempt >= MAX_DNS_RETRIES) {
           throw error;
         }
 
         const delayMs = 500 * 2 ** (attempt - 1);
         this.logger.warn(
-          `Temporary database DNS error (${code}); retrying expired-order lookup in ${delayMs}ms (${attempt}/${MAX_DNS_RETRIES - 1})`,
+          `Transient database connection error (${code ?? 'connection terminated'}); retrying expired-order lookup in ${delayMs}ms (${attempt}/${MAX_DNS_RETRIES - 1})`,
         );
         await new Promise<void>((resolve) => setTimeout(resolve, delayMs));
       }

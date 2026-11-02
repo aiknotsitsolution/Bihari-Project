@@ -74,6 +74,12 @@ export function postgresRoot(dbEnvKey: string, defaultDb: string, entities: any[
               database: c.get<string>(dbEnvKey, defaultDb),
             }),
         entities,
+        // Retire idle clients before hosted PostgreSQL proxies close their sockets.
+        extra: {
+          keepAlive: true,
+          keepAliveInitialDelayMillis: 10_000,
+          idleTimeoutMillis: 30_000,
+        },
         // Turn OFF in production and use migrations instead.
         synchronize: c.get('DB_SYNC', 'true') === 'true',
         logging: c.get('DB_LOGGING', 'false') === 'true',
