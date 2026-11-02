@@ -42,6 +42,7 @@ const Stack = createNativeStackNavigator<RootStackParams>();
 type IconName = keyof typeof Ionicons.glyphMap;
 const TAB_ICONS: Record<keyof TabParams, [IconName, IconName]> = {
   Home: ["home-outline", "home"],
+  Products: ["pricetags-outline", "pricetags"],
   Categories: ["grid-outline", "grid"],
   Cart: ["bag-outline", "bag"],
   Wishlist: ["heart-outline", "heart"],
@@ -85,6 +86,7 @@ function Tabs() {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
+      <Tab.Screen name="Products" component={ProductsScreen} options={{ title: "Products" }} />
       <Tab.Screen name="Categories" component={CategoriesScreen} />
       <Tab.Screen name="Cart" component={CartScreen} options={{ title: "My cart" }} />
       <Tab.Screen name="Wishlist" component={WishlistScreen} />

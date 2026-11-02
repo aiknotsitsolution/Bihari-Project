@@ -346,6 +346,7 @@ function mockFilter(q: ProductQuery): Product[] {
     case "price_asc": out.sort((a, b) => a.price - b.price); break;
     case "price_desc": out.sort((a, b) => b.price - a.price); break;
     case "rating": out.sort((a, b) => b.rating - a.rating); break;
+    case "discount": out.sort((a, b) => b.discountPercent - a.discountPercent); break;
     case "new": out.reverse(); break;
   }
   return out;
@@ -474,7 +475,7 @@ export const api = {
           sort:
             q.sort === "new"
               ? "newest"
-              : q.sort === "price_asc" || q.sort === "price_desc"
+              : q.sort === "price_asc" || q.sort === "price_desc" || q.sort === "discount"
                 ? q.sort
                 : undefined,
           minPrice: q.minPrice,

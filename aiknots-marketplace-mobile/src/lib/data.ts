@@ -30,11 +30,11 @@ export const BANNERS: Banner[] = [
 ];
 
 export const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-  { key: "relevance", label: "Relevance" },
+  { key: "relevance", label: "Recommended" },
   { key: "price_asc", label: "Price: Low to High" },
   { key: "price_desc", label: "Price: High to Low" },
-  { key: "rating", label: "Top rated" },
   { key: "new", label: "Newest" },
+  { key: "discount", label: "Biggest discount" },
 ];
 
 export const PRICE_RANGES: { label: string; min?: number; max?: number }[] = [

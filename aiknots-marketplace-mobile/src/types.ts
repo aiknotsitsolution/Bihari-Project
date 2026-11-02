@@ -129,7 +129,7 @@ export interface ChatMessage {
   text: string;
 }
 
-export type SortKey = "relevance" | "price_asc" | "price_desc" | "rating" | "new";
+export type SortKey = "relevance" | "price_asc" | "price_desc" | "rating" | "new" | "discount";
 
 export interface ProductQuery {
   q?: string;
@@ -178,6 +178,7 @@ export type RootStackParams = {
 
 export type TabParams = {
   Home: undefined;
+  Products: undefined;
   Categories: undefined;
   Cart: undefined;
   Wishlist: undefined;

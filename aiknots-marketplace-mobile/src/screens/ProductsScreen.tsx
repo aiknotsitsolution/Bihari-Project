@@ -14,7 +14,7 @@ import { PRICE_RANGES, SORT_OPTIONS } from "../lib/data";
 import { GRID_GAP, SCREEN_PAD, useCardWidth } from "../lib/layout";
 import { getJson, setJson } from "../lib/storage";
 import { colors, radius } from "../theme";
-import type { Product, ProductQuery, RootStackParams, SortKey } from "../types";
+import type { Category, Product, ProductQuery, RootStackParams, SortKey } from "../types";
 
 export default function ProductsScreen() {
   const nav = useNavigation<NativeStackNavigationProp<RootStackParams>>();
@@ -27,6 +27,10 @@ export default function ProductsScreen() {
   const [q, setQ] = useState(params.q ?? "");
   const [sort, setSort] = useState<SortKey>("relevance");
   const [range, setRange] = useState(0);
+  const [draftRange, setDraftRange] = useState(0);
+  const [categoryId, setCategoryId] = useState(params.categoryId);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesError, setCategoriesError] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [items, setItems] = useState<Product[]>([]);
   const [page, setPage] = useState(0);
@@ -36,7 +40,7 @@ export default function ProductsScreen() {
   const [error, setError] = useState<string | null>(null);
   const [recent, setRecent] = useState<string[]>([]);
   const reqId = useRef(0);
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<React.ElementRef<typeof TextInput>>(null);
 
   // debounce search typing
   useEffect(() => {
@@ -45,21 +49,39 @@ export default function ProductsScreen() {
   }, [text]);
 
   useEffect(() => {
+    setText(params.q ?? "");
+    setCategoryId(params.categoryId);
+  }, [params.q, params.categoryId]);
+
+  useEffect(() => {
     nav.setOptions({ title: params.title ?? "Products" });
     void getJson<string[]>(KEYS.recent, []).then(setRecent);
     if (params.focus) setTimeout(() => inputRef.current?.focus(), 350);
   }, [nav, params.title, params.focus]);
 
+  const loadCategories = useCallback(async () => {
+    try {
+      setCategories(await api.catalog.categories());
+      setCategoriesError(false);
+    } catch {
+      setCategoriesError(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadCategories();
+  }, [loadCategories]);
+
   const query = useCallback(
     (p: number): ProductQuery => ({
       q: q || undefined,
-      categoryId: params.categoryId,
+      categoryId,
       sort,
       minPrice: PRICE_RANGES[range]?.min,
       maxPrice: PRICE_RANGES[range]?.max,
       page: p,
     }),
-    [q, params.categoryId, sort, range]
+    [q, categoryId, sort, range]
   );
 
   const load = useCallback(async () => {
@@ -105,7 +127,7 @@ export default function ProductsScreen() {
     await setJson(KEYS.recent, next);
   };
 
-  const activeFilters = range !== 0 ? 1 : 0;
+  const activeFilters = (range !== 0 ? 1 : 0) + (categoryId ? 1 : 0);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.paper }}>
@@ -126,7 +148,7 @@ export default function ProductsScreen() {
             <AnimatedPressable onPress={() => setText("")} hitSlop={10} accessibilityLabel="Clear search">
               <Ionicons name="close-circle" size={18} color={colors.faint} />
             </AnimatedPressable>
-          ) : null}
+          ) : undefined}
         </View>
         <AnimatedPressable onPress={() => setFilterOpen(true)} style={s.filterBtn} accessibilityLabel="Filters" haptic>
           <Ionicons name="options-outline" size={20} color={colors.primary} />
@@ -134,18 +156,49 @@ export default function ProductsScreen() {
         </AnimatedPressable>
       </View>
 
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={{ flexGrow: 0 }}
+        contentContainerStyle={{ paddingHorizontal: SCREEN_PAD, gap: 8, paddingBottom: 10 }}
+      >
+        <Chip label="All products" active={!categoryId} onPress={() => setCategoryId(undefined)} />
+        {categories.map((category) => (
+          <Chip
+            key={category.id}
+            label={category.name}
+            active={categoryId === category.id}
+            onPress={() => setCategoryId(category.id)}
+          />
+        ))}
+      </ScrollView>
+
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ paddingHorizontal: SCREEN_PAD, gap: 8, paddingBottom: 10 }}>
         {SORT_OPTIONS.map((o) => (
           <Chip key={o.key} label={o.label} active={sort === o.key} onPress={() => setSort(o.key)} />
         ))}
       </ScrollView>
+      {categoriesError && (
+        <AnimatedPressable onPress={() => void loadCategories()} style={s.categoryError}>
+          <Text style={{ color: colors.alert, fontSize: 12 }}>Categories couldn’t load. Tap to retry.</Text>
+        </AnimatedPressable>
+      )}
 
       {error ? (
         <ErrorState message={error} onRetry={load} />
       ) : loading ? (
         <ProductGridSkeleton />
       ) : items.length === 0 ? (
-        <EmptyState icon="search-outline" title="No products found" message="Try a different keyword or clear the filters." actionLabel={activeFilters ? "Clear filters" : undefined} onAction={() => setRange(0)} />
+        <EmptyState
+          icon="search-outline"
+          title="No products found"
+          message="Try a different keyword or clear the filters."
+          actionLabel={activeFilters ? "Clear filters" : undefined}
+          onAction={() => {
+            setRange(0);
+            setCategoryId(undefined);
+          }}
+        />
       ) : (
         <FlatList
           data={items}
@@ -157,20 +210,32 @@ export default function ProductsScreen() {
           onEndReachedThreshold={0.4}
           keyboardShouldPersistTaps="handled"
           ListHeaderComponent={
-            !q && recent.length > 0 && !params.categoryId ? (
+            <View>
+              <Text style={s.resultCount}>{items.length} products</Text>
+              {!q && recent.length > 0 && !categoryId ? (
               <Animated.View entering={FadeIn} style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 4 }}>
                 {recent.map((r) => (
                   <Chip key={r} label={r} onPress={() => setText(r)} />
                 ))}
               </Animated.View>
-            ) : null
+              ) : undefined}
+            </View>
           }
-          ListFooterComponent={loadingMore ? <ActivityIndicator color={colors.primary} style={{ marginVertical: 16 }} /> : null}
+          ListFooterComponent={
+            loadingMore ? <ActivityIndicator color={colors.primary} style={{ marginVertical: 16 }} /> : undefined
+          }
           renderItem={({ item, index }) => <ProductCard product={item} index={index} width={cardW} />}
         />
       )}
 
-      <Modal visible={filterOpen} transparent animationType="fade" onRequestClose={() => setFilterOpen(false)} statusBarTranslucent>
+      <Modal
+        visible={filterOpen}
+        transparent
+        animationType="fade"
+        onShow={() => setDraftRange(range)}
+        onRequestClose={() => setFilterOpen(false)}
+        statusBarTranslucent
+      >
         <View style={s.backdrop}>
           <AnimatedPressable style={StyleSheet.absoluteFill} onPress={() => setFilterOpen(false)} scaleTo={1}>
             <View style={StyleSheet.absoluteFill} />
@@ -180,12 +245,28 @@ export default function ProductsScreen() {
             <Text style={s.sheetTitle}>Filter by price</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginVertical: 14 }}>
               {PRICE_RANGES.map((r, i) => (
-                <Chip key={r.label} label={r.label} active={range === i} onPress={() => setRange(i)} />
+                <Chip key={r.label} label={r.label} active={draftRange === i} onPress={() => setDraftRange(i)} />
               ))}
             </View>
             <View style={{ flexDirection: "row", gap: 10 }}>
-              <Button title="Reset" variant="ghost" onPress={() => setRange(0)} style={{ flex: 1 }} />
-              <Button title="Show results" onPress={() => setFilterOpen(false)} style={{ flex: 2 }} />
+              <Button
+                title="Reset"
+                variant="ghost"
+                onPress={() => {
+                  setDraftRange(0);
+                  setRange(0);
+                  setCategoryId(undefined);
+                }}
+                style={{ flex: 1 }}
+              />
+              <Button
+                title="Show results"
+                onPress={() => {
+                  setRange(draftRange);
+                  setFilterOpen(false);
+                }}
+                style={{ flex: 2 }}
+              />
             </View>
           </Animated.View>
         </View>
@@ -196,6 +277,8 @@ export default function ProductsScreen() {
 
 const s = StyleSheet.create({
   searchRow: { flexDirection: "row", gap: 10, padding: SCREEN_PAD, paddingBottom: 10 },
+  categoryError: { paddingHorizontal: SCREEN_PAD, paddingBottom: 8 },
+  resultCount: { color: colors.muted, fontSize: 12, marginBottom: 10 },
   searchBox: { flex: 1, flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#fff", borderRadius: radius.md, paddingHorizontal: 12, borderWidth: 1, borderColor: colors.border },
   searchInput: { flex: 1, paddingVertical: 12, fontSize: 15, color: colors.text },
   filterBtn: { width: 48, borderRadius: radius.md, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center" },
